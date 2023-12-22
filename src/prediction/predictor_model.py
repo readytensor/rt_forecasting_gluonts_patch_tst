@@ -49,6 +49,7 @@ class Forecaster:
         activation: str = "relu",
         scaling: str = "mean",
         batch_size: int = 32,
+        early_stopping: bool = True,
         early_stopping_patience: int = 20,
         min_delta: float = 0.01,
         trainer_kwargs: dict = {},
@@ -100,6 +101,8 @@ class Forecaster:
             scaling (bool): Whether to automatically scale the target values (default: true).
 
             batch_size (int) The size of the batches to be used for training (default: 32).
+
+            early_stopping (bool): If true, use early stopping.
 
             early_stopping_patience (int): Patience used by early stopper.
 
@@ -154,7 +157,8 @@ class Forecaster:
             mode="min",
         )
 
-        self.trainer_kwargs["callbacks"] = [early_stopping]
+        if early_stopping:
+            self.trainer_kwargs["callbacks"] = [early_stopping]
 
         if torch.cuda.is_available():
             print("GPU is available")
