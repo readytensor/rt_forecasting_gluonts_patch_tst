@@ -207,7 +207,7 @@ def get_peak_memory_usage():
     Returns the peak memory usage by current cuda device (in MB) if available
     """
     if not torch.cuda.is_available():
-        return None
+        return 0
 
     current_device = torch.cuda.current_device()
     peak_memory = torch.cuda.max_memory_allocated(current_device)
@@ -221,7 +221,6 @@ class MemoryMonitor:
         self.thread = threading.Thread(target=self.monitor_loop)
         self.initial_cpu_memory = None
         self.peak_cpu_memory = 0
-        self.peak_gpu_memory = self.initial_gpu_memory
 
     def monitor_memory(self):
         process = psutil.Process(os.getpid())
