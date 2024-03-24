@@ -1,40 +1,35 @@
+# Use a specific version of nvidia/cuda base image
 FROM nvidia/cuda:12.2.0-runtime-ubuntu20.04 as builder
 
-
-RUN apt-get -y update && apt-get install -y --no-install-recommends \
+# Install dependencies, python, pip, and add symbolic link to python3 in a single RUN to reduce layers
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     dos2unix \
-    && rm -rf /var/lib/apt/lists/*
-
-# install python and pip and add symbolic link to python3
-RUN apt-get -y update && apt-get install -y --no-install-recommends \
     python3.9 \
     python3-pip \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/bin/python3 /usr/bin/python
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && rm -rf /var/lib/apt/lists/* 
 
-RUN pip3 install --upgrade pip
-
+# Upgrade pip and install requirements in a single layer
 COPY ./requirements.txt .
-RUN pip3 install -r requirements.txt 
+RUN pip3 --no-cache-dir install --upgrade pip && \
+    pip3 --no-cache-dir install -r requirements.txt
 
-
-COPY src ./opt/src
-
+# Copy source code and entry point script
+COPY src /opt/src
 COPY ./entry_point.sh /opt/
-RUN chmod +x /opt/entry_point.sh
+RUN chmod +x /opt/entry_point.sh \
+    && mkdir -p /opt/src/lightning_logs && chmod -R 777 /opt/src/lightning_logs
 
+# Set working directory
 WORKDIR /opt/src
 
-ENV MPLCONFIGDIR=/tmp/matplotlib
-ENV PYTHONUNBUFFERED=TRUE
-ENV PYTHONDONTWRITEBYTECODE=TRUE
-ENV PATH="/opt/app:${PATH}"
+# Set environment variables
+ENV MPLCONFIGDIR=/tmp/matplotlib \
+    PYTHONUNBUFFERED=TRUE \
+    PYTHONDONTWRITEBYTECODE=TRUE \
+    PATH="/opt/app:${PATH}"
 
-RUN mkdir -p /opt/src/lightning_logs && chmod -R 777 /opt/src/lightning_logs
-
-
-# set non-root user
+# Set non-root user and entrypoint
 USER 1000
-# set entrypoint
 ENTRYPOINT ["/opt/entry_point.sh"]
